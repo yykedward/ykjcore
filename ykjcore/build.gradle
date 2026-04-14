@@ -1,10 +1,9 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 apply plugin: 'maven-publish'
 
 android {
     namespace 'io.github.yykedward'
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         minSdk 24
@@ -21,32 +20,27 @@ android {
     }
 }
 
-dependencies {
+publishing {
+    publications {
+        // 定义一个名为 release 的 Maven 发布项
+        maven(MavenPublication) {
+            // 项目的组 ID，通常是公司或组织的域名倒序
+            groupId = 'io.github.yykedward'
+            artifactId = 'ykjcore'
+            version = '1.0.0'
 
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                // Applies the component for the release build variant.
-                from components.release
-
-                // You can then customize attributes of the publication as shown below.
-                groupId = 'io.github.yykedward'
-                artifactId = 'ykjcore'
-                version = '1.0.0'
-            }
-            // Creates a Maven publication called “debug”.
-            debug(MavenPublication) {
-                // Applies the component for the debug build variant.
-                from components.debug
-
-                groupId = 'io.github.yykedward'
-                artifactId = 'ykjcore'
-                version = '1.0.0'
-            }
         }
     }
+
+    repositories {
+        // 指定发布的仓库为本地 Maven 仓库
+        maven {
+            name = 'ykjcore'
+            url = layout.buildDirectory.dir("repo")
+        }
+    }
+}
+
+dependencies {
+
 }
