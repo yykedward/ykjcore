@@ -1,14 +1,14 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace 'io.github.yykedward'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
-        minSdk 24
+        minSdk 21
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
 
@@ -23,9 +23,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    buildFeatures {
-        compose true
-    }
 }
 
 publishing {
@@ -37,6 +34,9 @@ publishing {
             artifactId = 'ykjcore'
             version = '1.0.0'
 
+            afterEvaluate {
+                from components.release
+            }
         }
     }
 
