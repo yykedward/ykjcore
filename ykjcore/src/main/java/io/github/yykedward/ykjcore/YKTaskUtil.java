@@ -1,57 +1,65 @@
 package io.github.yykedward.ykjcore;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class YKTaskUtil {
 
     public interface YKTaskUtilNextTaskCallBack {
-
         void next();
     }
 
     public interface YKTaskUtilCallBack {
-
         void doNext(YKTaskUtilNextTaskCallBack nextTaskCallBack);
     }
 
+    public interface OnTaskQueueCompleteListener {
+        void onComplete();
+    }
 
-    private final ArrayList<YKTaskUtilCallBack> taskList = new ArrayList<>();
-    private int currentIndex = 0;
-    private int saveIndex = 0;
+    private final LinkedList<YKTaskUtilCallBack> taskQueue = new LinkedList<>();
+    private boolean isExecuting = false;
+    private OnTaskQueueCompleteListener listener;
 
     public YKTaskUtil() { }
 
     public void add(YKTaskUtilCallBack callBack) {
         if (callBack != null) {
-            taskList.add(callBack);
+            taskQueue.offer(callBack);
         }
     }
 
-    public void executeFirstTask() {
-        this.currentIndex = 0;
-        this.saveIndex = 0;
-        nextTask();
+    public void setOnTaskQueueCompleteListener(OnTaskQueueCompleteListener listener) {
+        this.listener = listener;
     }
 
-
-    public void nextTask() {
-        if (this.currentIndex > (this.taskList.size() - 1)) {
+    public synchronized void executeFirstTask() {
+        if (isExecuting) {
+            throw new YKTaskException("任务队列正在执行中，请勿重复调用 executeFirstTask()");
+        }
+        if (taskQueue.isEmpty()) {
             return;
         }
-        YKTaskUtilCallBack callBack = this.taskList.get(this.currentIndex);
-        try {
-            callBack.doNext(new YKTaskUtilNextTaskCallBack() {
-                @Override
-                public void next() {
-                    nextTask();
-                }
-            });
+        isExecuting = true;
+        executeNext();
+    }
 
-            this.saveIndex = this.currentIndex;
-            this.currentIndex = this.currentIndex + 1;
-
-        } catch (Exception ignored) {
-
+    private synchronized void executeNext() {
+        if (taskQueue.isEmpty()) {
+            isExecuting = false;
+            if (listener != null) {
+                listener.onComplete();
+            }
+            return;
+        }
+        
+        YKTaskUtilCallBack task = taskQueue.poll();
+        if (task != null) {
+            try {
+                task.doNext(this::executeNext);
+            } catch (Exception e) {
+                isExecuting = false;
+                throw new YKTaskException("任务执行失败", e);
+            }
         }
     }
 }
